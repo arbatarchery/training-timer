@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Temporizador de Entrenamiento</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00ff88">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Timer">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="phase-prep">
+
+  <!-- ── SCREEN 1: Config ─────────────────────────────── -->
+  <section id="config-screen" class="screen active">
+    <div class="config-header">
+      <h1>Temporizador de Entrenamiento</h1>
+      <p>Configura tu sesión y presiona comenzar</p>
+    </div>
+
+    <form class="config-form" id="config-form" onsubmit="return false">
+
+      <div class="field">
+        <label for="prepTime">Tiempo de preparación</label>
+        <input type="number" id="prepTime" value="10" min="1" max="60">
+        <span class="unit">seg</span>
+      </div>
+
+      <div class="field">
+        <label for="workTime">Duración por ejercicio</label>
+        <input type="number" id="workTime" value="30" min="5" max="300">
+        <span class="unit">seg</span>
+      </div>
+
+      <div class="field">
+        <label for="exercisesPerSet">Ejercicios por serie</label>
+        <input type="number" id="exercisesPerSet" value="4" min="1" max="20">
+        <span class="unit">#</span>
+      </div>
+
+      <div class="field">
+        <label for="sets">Número de series</label>
+        <input type="number" id="sets" value="4" min="1" max="20">
+        <span class="unit">#</span>
+      </div>
+
+      <div class="field">
+        <label for="restTime">Tiempo de descanso</label>
+        <input type="number" id="restTime" value="120" min="5" max="600">
+        <span class="unit">seg</span>
+      </div>
+
+      <button class="btn-start" id="btn-start">COMENZAR</button>
+    </form>
+  </section>
+
+  <!-- ── SCREEN 2: Timer ──────────────────────────────── -->
+  <section id="timer-screen" class="screen">
+    <div class="timer-topbar">
+      <button class="btn btn-back" id="btn-back">← Configuración</button>
+      <span class="series-indicator" id="series-indicator"></span>
+    </div>
+
+    <div class="timer-main">
+      <div class="countdown" id="countdown">--</div>
+    </div>
+
+    <div class="timer-info">
+      <div class="phase-label" id="phase-label">PREPARACIÓN</div>
+      <div class="phase-bar"><div class="phase-bar-fill" id="phase-bar-fill" style="width:100%"></div></div>
+      <div class="progress-dots" id="progress-dots"></div>
+      <div class="next-phase" id="next-phase"></div>
+      <div class="controls">
+        <button class="btn btn-pause"  id="btn-pause">Pausa</button>
+        <button class="btn btn-reset"  id="btn-reset">Reiniciar</button>
+      </div>
+    </div>
+
+    <!-- Done overlay -->
+    <div class="done-overlay" id="done-overlay">
+      <div class="done-title">¡Completado!</div>
+      <div class="done-sub">Entrenamiento finalizado</div>
+      <button class="btn btn-resume" id="btn-done-back" style="flex:none;padding:1rem 2rem;font-size:1rem">
+        Volver al inicio
+      </button>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --border: #222;
+  --green: #00ff88;
+  --yellow: #ffd000;
+  --blue: #00b4ff;
+  --text: #f0f0f0;
+  --muted: #666;
+  --radius: 12px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+/* ── SCREENS ─────────────────────────────────────────── */
+.screen { display: none; height: 100dvh; overflow-y: auto; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ── CONFIG SCREEN ───────────────────────────────────── */
+#config-screen {
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2rem 1.2rem 3rem;
+  gap: 0;
+}
+
+.config-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.config-header h1 {
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  font-weight: 900;
+  color: var(--green);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.config-header p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+}
+
+.config-form {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.field {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.field label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+
+.field input {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: var(--green);
+  font-size: 1.4rem;
+  font-weight: 800;
+  width: 5rem;
+  text-align: center;
+  padding: 0.4rem 0.2rem;
+  -moz-appearance: textfield;
+}
+
+.field input::-webkit-outer-spin-button,
+.field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.field input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px rgba(0,255,136,0.15);
+}
+
+.field .unit {
+  font-size: 0.75rem;
+  color: var(--muted);
+  min-width: 2rem;
+}
+
+.btn-start {
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  background: var(--green);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.1s;
+}
+
+.btn-start:active { transform: scale(0.97); opacity: 0.9; }
+
+/* ── TIMER SCREEN ────────────────────────────────────── */
+#timer-screen {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Portrait layout */
+@media (orientation: portrait) {
+  #timer-screen {
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .timer-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  .timer-info {
+    padding: 0 1.2rem 1rem;
+  }
+}
+
+/* Landscape layout */
+@media (orientation: landscape) {
+  #timer-screen {
+    flex-direction: row;
+  }
+  .timer-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+  }
+  .timer-info {
+    width: 38%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1rem 1.2rem 1rem 0;
+    overflow-y: auto;
+  }
+}
+
+/* Countdown digit */
+.countdown {
+  font-size: min(42vw, 42vh);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+  text-shadow: 0 0 40px currentColor;
+  user-select: none;
+}
+
+@media (orientation: landscape) {
+  .countdown { font-size: min(35vw, 70vh); }
+}
+
+/* Phase colors */
+body.phase-prep   .countdown { color: var(--yellow); }
+body.phase-work   .countdown { color: var(--green);  }
+body.phase-rest   .countdown { color: var(--blue);   }
+body.phase-done   .countdown { color: var(--muted);  }
+
+body.phase-prep   .phase-bar-fill { background: var(--yellow); }
+body.phase-work   .phase-bar-fill { background: var(--green);  }
+body.phase-rest   .phase-bar-fill { background: var(--blue);   }
+
+/* Phase label */
+.phase-label {
+  font-size: clamp(1rem, 3.5vw, 1.5rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.6rem;
+  color: var(--text);
+}
+
+/* Progress bar */
+.phase-bar {
+  height: 6px;
+  background: #222;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 1.2rem;
+}
+
+.phase-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.9s linear, background 0.3s;
+}
+
+/* Overall progress dots */
+.progress-dots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #333;
+  transition: background 0.3s;
+}
+
+.dot.done { background: var(--green); }
+.dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+/* Next phase indicator */
+.next-phase {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 1.2rem;
+}
+
+.next-phase span { color: var(--text); font-weight: 600; }
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  flex: 1;
+  min-width: 70px;
+  padding: 0.75rem 0.5rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: transform 0.1s, opacity 0.1s;
+}
+
+.btn:active { transform: scale(0.95); opacity: 0.85; }
+
+.btn-pause  { background: var(--yellow); color: #000; }
+.btn-resume { background: var(--green);  color: #000; }
+.btn-reset  { background: #222;          color: var(--text); }
+.btn-back   { background: transparent;   color: var(--muted); border: 1px solid #333; font-size: 0.8rem; flex: none; padding: 0.75rem 1rem; }
+
+/* Top bar in timer */
+.timer-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1.2rem 0;
+}
+
+.series-indicator {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Done overlay */
+.done-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(10,10,10,0.95);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  z-index: 10;
+}
+
+.done-overlay.visible { display: flex; }
+
+.done-title {
+  font-size: clamp(2rem, 10vw, 4rem);
+  font-weight: 900;
+  color: var(--green);
+  text-align: center;
+}
+
+.done-sub {
+  font-size: 1rem;
+  color: var(--muted);
+}
