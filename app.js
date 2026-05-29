@@ -8,22 +8,33 @@ function getAudioCtx() {
   return audioCtx;
 }
 
+// Must be called synchronously inside a user gesture to unlock audio on iOS/Android.
+// Plays a silent 1-sample buffer which activates the AudioContext immediately.
+function unlockAudio() {
+  try {
+    const ctx = getAudioCtx();
+    ctx.resume();
+    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch (_) {}
+}
+
 function beep(freq = 880, duration = 0.12, type = 'sine', gain = 0.4) {
   try {
     const ctx = getAudioCtx();
-    const play = () => {
-      const osc = ctx.createOscillator();
-      const vol = ctx.createGain();
-      osc.connect(vol);
-      vol.connect(ctx.destination);
-      osc.type = type;
-      osc.frequency.value = freq;
-      vol.gain.setValueAtTime(gain, ctx.currentTime);
-      vol.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + duration);
-    };
-    if (ctx.state === 'running') { play(); } else { ctx.resume().then(play); }
+    const osc = ctx.createOscillator();
+    const vol = ctx.createGain();
+    osc.connect(vol);
+    vol.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    vol.gain.setValueAtTime(gain, ctx.currentTime);
+    vol.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
   } catch (_) {}
 }
 
@@ -87,6 +98,7 @@ function showScreen(id) {
 
 // ── Start ──────────────────────────────────────────────────────────
 document.getElementById('btn-start').addEventListener('click', () => {
+  unlockAudio();
   cfg = {
     prepTime:        parseInt(document.getElementById('prepTime').value)        || 10,
     workTime:        parseInt(document.getElementById('workTime').value)        || 30,
@@ -194,10 +206,10 @@ function finish() {
 
 // ── Controls ───────────────────────────────────────────────────────
 btnPause.addEventListener('click', () => {
+  unlockAudio();
   paused = !paused;
   btnPause.textContent = paused ? 'Reanudar' : 'Pausa';
   btnPause.className   = paused ? 'btn btn-resume' : 'btn btn-pause';
-  if (!paused && getAudioCtx().state === 'suspended') getAudioCtx().resume();
 });
 
 document.getElementById('btn-reset').addEventListener('click', () => {
