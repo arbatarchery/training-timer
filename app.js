@@ -162,7 +162,7 @@ function tick() {
       startStep();
       return;
     }
-    if (secondsLeft <= 5) countdownBeep();
+    if (secondsLeft >= 1 && secondsLeft <= 5) countdownBeep();
     render();
   }, 1000);
 }

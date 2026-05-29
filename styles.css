@@ -22,6 +22,19 @@ html, body {
   touch-action: manipulation;
 }
 
+/* ── LOGO ────────────────────────────────────────────── */
+.logo-fixed {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  height: 48px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+  z-index: 1000;
+  pointer-events: none;
+}
+
 /* ── SCREENS ─────────────────────────────────────────── */
 .screen { display: none; height: 100dvh; overflow-y: auto; }
 .screen.active { display: flex; flex-direction: column; }

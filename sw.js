@@ -1,10 +1,11 @@
-const CACHE_NAME = 'training-timer-v1';
+const CACHE_NAME = 'training-timer-v2';
 const ASSETS = [
   './',
   './index.html',
   './app.js',
   './styles.css',
   './manifest.json',
+  './logo.png',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
