@@ -11,17 +11,19 @@ function getAudioCtx() {
 function beep(freq = 880, duration = 0.12, type = 'sine', gain = 0.4) {
   try {
     const ctx = getAudioCtx();
-    if (ctx.state === 'suspended') ctx.resume();
-    const osc = ctx.createOscillator();
-    const vol = ctx.createGain();
-    osc.connect(vol);
-    vol.connect(ctx.destination);
-    osc.type = type;
-    osc.frequency.value = freq;
-    vol.gain.setValueAtTime(gain, ctx.currentTime);
-    vol.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration);
+    const play = () => {
+      const osc = ctx.createOscillator();
+      const vol = ctx.createGain();
+      osc.connect(vol);
+      vol.connect(ctx.destination);
+      osc.type = type;
+      osc.frequency.value = freq;
+      vol.gain.setValueAtTime(gain, ctx.currentTime);
+      vol.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    };
+    if (ctx.state === 'running') { play(); } else { ctx.resume().then(play); }
   } catch (_) {}
 }
 

@@ -26,7 +26,8 @@ html, body {
 .logo-fixed {
   position: fixed;
   top: 12px;
-  right: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   height: 48px;
   width: auto;
   max-width: 120px;
@@ -43,7 +44,7 @@ html, body {
 #config-screen {
   align-items: center;
   justify-content: flex-start;
-  padding: 2rem 1.2rem 3rem;
+  padding: 5rem 1.2rem 3rem;
   gap: 0;
 }
 
