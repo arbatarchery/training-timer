@@ -100,7 +100,7 @@ function buildSequence(cfg) {
   for (let s = 1; s <= cfg.sets; s++) {
     for (let e = 1; e <= cfg.exercisesPerSet; e++) {
       seq.push({ type: 'work', label: `SERIE ${s} · EJERCICIO ${e}`, duration: cfg.workTime, series: s, exercise: e });
-      if (e < cfg.exercisesPerSet) {
+      if (e < cfg.exercisesPerSet && cfg.betweenTime > 0) {
         seq.push({ type: 'entre', label: 'ENTRE EJERCICIOS', duration: cfg.betweenTime, series: s, exercise: e });
       }
     }
@@ -146,7 +146,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
   cfg = {
     prepTime:        parseInt(document.getElementById('prepTime').value)        || 10,
     workTime:        parseInt(document.getElementById('workTime').value)        || 30,
-    betweenTime:     parseInt(document.getElementById('betweenTime').value)     || 10,
+    betweenTime:     (v => v === '' || isNaN(v) ? 10 : v)(parseInt(document.getElementById('betweenTime').value)),
     exercisesPerSet: parseInt(document.getElementById('exercisesPerSet').value) || 4,
     sets:            parseInt(document.getElementById('sets').value)            || 4,
     restTime:        parseInt(document.getElementById('restTime').value)        || 120,
