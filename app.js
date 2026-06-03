@@ -2,14 +2,16 @@
 
 // ── Audio ──────────────────────────────────────────────────────────
 let audioCtx = null;
+let scheduledNodes = [];
 
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 
-// Must be called synchronously inside a user gesture to unlock audio on iOS/Android.
-// Plays a silent 1-sample buffer which activates the AudioContext immediately.
+// Called synchronously inside a user gesture to unlock audio on iOS.
+// Creates the context, resumes it, and plays a silent buffer — required
+// on older iOS where the context stays suspended without this trick.
 function unlockAudio() {
   try {
     const ctx = getAudioCtx();
@@ -22,7 +24,10 @@ function unlockAudio() {
   } catch (_) {}
 }
 
-function beep(freq = 880, duration = 0.12, type = 'sine', gain = 0.4) {
+// Schedule a single beep at an absolute audio-clock time.
+// Using the audio clock (ctx.currentTime) instead of setTimeout means
+// iOS setInterval throttling cannot delay or skip beeps.
+function scheduleBeepAt(freq, dur, type, gain, when) {
   try {
     const ctx = getAudioCtx();
     const osc = ctx.createOscillator();
@@ -31,30 +36,61 @@ function beep(freq = 880, duration = 0.12, type = 'sine', gain = 0.4) {
     vol.connect(ctx.destination);
     osc.type = type;
     osc.frequency.value = freq;
-    vol.gain.setValueAtTime(gain, ctx.currentTime);
-    vol.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration);
+    vol.gain.setValueAtTime(gain, when);
+    vol.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    osc.start(when);
+    osc.stop(when + dur);
+    scheduledNodes.push(osc);
+    osc.onended = () => {
+      const i = scheduledNodes.indexOf(osc);
+      if (i >= 0) scheduledNodes.splice(i, 1);
+    };
   } catch (_) {}
 }
 
-function transitionBeep() {
-  beep(1200, 0.25, 'square', 0.35);
-  setTimeout(() => beep(1500, 0.2, 'square', 0.3), 200);
+// Stop and release all pre-scheduled nodes (called on step change / reset / back).
+function cancelScheduledAudio() {
+  scheduledNodes.forEach(osc => { try { osc.stop(0); } catch (_) {} });
+  scheduledNodes = [];
 }
 
-function countdownBeep() {
-  beep(660, 0.1, 'sine', 0.5);
+// Pre-schedule every beep for a step at step-start using the audio clock.
+// ctx.resume() is awaited first so the clock is running before we read currentTime.
+// Because ctx.currentTime freezes when the context is suspended (pause), and
+// resumes from the same position on ctx.resume(), beeps stay in sync with the
+// visual countdown automatically across pause/resume cycles.
+function scheduleAllBeepsForStep(step) {
+  const ctx = getAudioCtx();
+  ctx.resume().then(() => {
+    const now = ctx.currentTime;
+
+    // Transition beep — two-tone, plays immediately at phase start
+    scheduleBeepAt(1200, 0.25, 'square', 0.35, now);
+    scheduleBeepAt(1500, 0.2,  'square', 0.3,  now + 0.2);
+
+    // Entre phase — 440 Hz sine tick on every elapsed second
+    if (step.type === 'entre') {
+      for (let i = 1; i < step.duration; i++) {
+        scheduleBeepAt(440, 0.06, 'sine', 0.4, now + i);
+      }
+    }
+
+    // Countdown — 660 Hz beep at 5, 4, 3, 2, 1 seconds remaining
+    const cStart = Math.min(5, step.duration - 1);
+    for (let s = cStart; s >= 1; s--) {
+      scheduleBeepAt(660, 0.1, 'sine', 0.5, now + (step.duration - s));
+    }
+  });
 }
 
 function doneBeep() {
-  beep(880, 0.2, 'square', 0.4);
-  setTimeout(() => beep(1100, 0.2, 'square', 0.4), 200);
-  setTimeout(() => beep(1320, 0.35, 'square', 0.4), 400);
-}
-
-function entreBeep() {
-  beep(440, 0.06, 'sine', 0.4);
+  const ctx = getAudioCtx();
+  ctx.resume().then(() => {
+    const now = ctx.currentTime;
+    scheduleBeepAt(880,  0.2,  'square', 0.4, now);
+    scheduleBeepAt(1100, 0.2,  'square', 0.4, now + 0.2);
+    scheduleBeepAt(1320, 0.35, 'square', 0.4, now + 0.4);
+  });
 }
 
 // ── Sequence builder ───────────────────────────────────────────────
@@ -68,8 +104,7 @@ function buildSequence(cfg) {
         seq.push({ type: 'entre', label: 'ENTRE EJERCICIOS', duration: cfg.betweenTime, series: s, exercise: e });
       }
     }
-    const isLast = s === cfg.sets;
-    if (!isLast) {
+    if (s < cfg.sets) {
       seq.push({ type: 'rest', label: 'DESCANSO', duration: cfg.restTime, series: s, exercise: 0 });
     }
   }
@@ -88,8 +123,6 @@ let totalDuration = 0;
 let elapsedSeconds = 0;
 
 // ── DOM refs ───────────────────────────────────────────────────────
-const configScreen   = document.getElementById('config-screen');
-const timerScreen    = document.getElementById('timer-screen');
 const countdownEl    = document.getElementById('countdown');
 const phaseLabelEl   = document.getElementById('phase-label');
 const phaseBarFill   = document.getElementById('phase-bar-fill');
@@ -159,10 +192,8 @@ function startStep() {
   stepDuration = step.duration;
   secondsLeft  = step.duration;
 
-  // Phase class on body
   document.body.className = 'phase-' + step.type;
 
-  // Labels
   phaseLabelEl.textContent = step.label;
   if (step.type === 'work' || step.type === 'entre') {
     seriesIndicEl.textContent = `Serie ${step.series} / ${cfg.sets}`;
@@ -174,10 +205,13 @@ function startStep() {
 
   updateDots();
   updateNextPhase();
-  transitionBeep();
+  cancelScheduledAudio();
+  scheduleAllBeepsForStep(step);
   tick();
 }
 
+// setInterval drives only the visual counter and elapsed time.
+// All audio is pre-scheduled via the Web Audio clock and fires independently.
 function tick() {
   render();
   updateTimeTotals();
@@ -192,9 +226,6 @@ function tick() {
       startStep();
       return;
     }
-    const step = sequence[stepIndex];
-    if (step && step.type === 'entre') entreBeep();
-    if (secondsLeft >= 1 && secondsLeft <= 5) countdownBeep();
     render();
     updateTimeTotals();
   }, 1000);
@@ -237,15 +268,25 @@ function finish() {
 btnPause.addEventListener('click', () => {
   unlockAudio();
   paused = !paused;
+  // Suspend/resume the audio context so the pre-scheduled beeps pause and
+  // resume in lockstep with the visual countdown (ctx.currentTime freezes
+  // during suspend, keeping audio offsets perfectly aligned).
+  if (paused) {
+    audioCtx && audioCtx.suspend();
+  } else {
+    audioCtx && audioCtx.resume();
+  }
   btnPause.textContent = paused ? 'Reanudar' : 'Pausa';
   btnPause.className   = paused ? 'btn btn-resume' : 'btn btn-pause';
 });
 
 document.getElementById('btn-reset').addEventListener('click', () => {
   clearInterval(timerId);
-  stepIndex  = 0;
+  cancelScheduledAudio();
+  if (audioCtx) audioCtx.resume();
+  stepIndex     = 0;
   elapsedSeconds = 0;
-  paused     = false;
+  paused        = false;
   btnPause.textContent = 'Pausa';
   btnPause.className   = 'btn btn-pause';
   doneOverlay.classList.remove('visible');
@@ -255,6 +296,7 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 
 document.getElementById('btn-back').addEventListener('click', () => {
   clearInterval(timerId);
+  cancelScheduledAudio();
   showScreen('config-screen');
 });
 
