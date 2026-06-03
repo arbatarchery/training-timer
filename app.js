@@ -53,6 +53,10 @@ function doneBeep() {
   setTimeout(() => beep(1320, 0.35, 'square', 0.4), 400);
 }
 
+function entreBeep() {
+  beep(440, 0.06, 'sine', 0.4);
+}
+
 // ── Sequence builder ───────────────────────────────────────────────
 function buildSequence(cfg) {
   const seq = [];
@@ -60,6 +64,9 @@ function buildSequence(cfg) {
   for (let s = 1; s <= cfg.sets; s++) {
     for (let e = 1; e <= cfg.exercisesPerSet; e++) {
       seq.push({ type: 'work', label: `SERIE ${s} · EJERCICIO ${e}`, duration: cfg.workTime, series: s, exercise: e });
+      if (e < cfg.exercisesPerSet) {
+        seq.push({ type: 'entre', label: 'ENTRE EJERCICIOS', duration: cfg.betweenTime, series: s, exercise: e });
+      }
     }
     const isLast = s === cfg.sets;
     if (!isLast) {
@@ -77,6 +84,8 @@ let stepDuration = 0;
 let timerId = null;
 let paused = false;
 let cfg = {};
+let totalDuration = 0;
+let elapsedSeconds = 0;
 
 // ── DOM refs ───────────────────────────────────────────────────────
 const configScreen   = document.getElementById('config-screen');
@@ -89,6 +98,8 @@ const nextPhaseEl    = document.getElementById('next-phase');
 const seriesIndicEl  = document.getElementById('series-indicator');
 const doneOverlay    = document.getElementById('done-overlay');
 const btnPause       = document.getElementById('btn-pause');
+const elapsedEl      = document.getElementById('elapsed-time');
+const remainingEl    = document.getElementById('remaining-time');
 
 // ── Screen navigation ──────────────────────────────────────────────
 function showScreen(id) {
@@ -102,6 +113,7 @@ document.getElementById('btn-start').addEventListener('click', () => {
   cfg = {
     prepTime:        parseInt(document.getElementById('prepTime').value)        || 10,
     workTime:        parseInt(document.getElementById('workTime').value)        || 30,
+    betweenTime:     parseInt(document.getElementById('betweenTime').value)     || 10,
     exercisesPerSet: parseInt(document.getElementById('exercisesPerSet').value) || 4,
     sets:            parseInt(document.getElementById('sets').value)            || 4,
     restTime:        parseInt(document.getElementById('restTime').value)        || 120,
@@ -109,6 +121,8 @@ document.getElementById('btn-start').addEventListener('click', () => {
   sequence = buildSequence(cfg);
   stepIndex = 0;
   paused = false;
+  elapsedSeconds = 0;
+  totalDuration = sequence.reduce((s, p) => s + p.duration, 0);
   doneOverlay.classList.remove('visible');
   buildDots();
   showScreen('timer-screen');
@@ -150,7 +164,7 @@ function startStep() {
 
   // Labels
   phaseLabelEl.textContent = step.label;
-  if (step.type === 'work') {
+  if (step.type === 'work' || step.type === 'entre') {
     seriesIndicEl.textContent = `Serie ${step.series} / ${cfg.sets}`;
   } else if (step.type === 'rest') {
     seriesIndicEl.textContent = `Descanso · Serie ${step.series} de ${cfg.sets}`;
@@ -166,18 +180,23 @@ function startStep() {
 
 function tick() {
   render();
+  updateTimeTotals();
   clearInterval(timerId);
   timerId = setInterval(() => {
     if (paused) return;
     secondsLeft--;
+    elapsedSeconds++;
     if (secondsLeft <= 0) {
       clearInterval(timerId);
       stepIndex++;
       startStep();
       return;
     }
+    const step = sequence[stepIndex];
+    if (step && step.type === 'entre') entreBeep();
     if (secondsLeft >= 1 && secondsLeft <= 5) countdownBeep();
     render();
+    updateTimeTotals();
   }, 1000);
 }
 
@@ -190,8 +209,18 @@ function render() {
 function updateNextPhase() {
   const next = sequence[stepIndex + 1];
   if (!next) { nextPhaseEl.innerHTML = ''; return; }
-  const labels = { prep: 'Preparación', work: next.label, rest: 'Descanso' };
+  const labels = { prep: 'Preparación', work: next.label, rest: 'Descanso', entre: 'Entre Ejercicios' };
   nextPhaseEl.innerHTML = `A continuación: <span>${labels[next.type] || next.label}</span>`;
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  return String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+
+function updateTimeTotals() {
+  elapsedEl.textContent   = fmtTime(elapsedSeconds);
+  remainingEl.textContent = fmtTime(Math.max(0, totalDuration - elapsedSeconds));
 }
 
 // ── Finish ─────────────────────────────────────────────────────────
@@ -215,6 +244,7 @@ btnPause.addEventListener('click', () => {
 document.getElementById('btn-reset').addEventListener('click', () => {
   clearInterval(timerId);
   stepIndex  = 0;
+  elapsedSeconds = 0;
   paused     = false;
   btnPause.textContent = 'Pausa';
   btnPause.className   = 'btn btn-pause';

@@ -7,6 +7,7 @@
   --green: #00ff88;
   --yellow: #ffd000;
   --blue: #00b4ff;
+  --orange: #ff8800;
   --text: #f0f0f0;
   --muted: #666;
   --radius: 12px;
@@ -153,6 +154,12 @@ html, body {
     flex-direction: column;
     justify-content: flex-start;
   }
+  .timer-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
   .timer-main {
     flex: 1;
     display: flex;
@@ -161,14 +168,21 @@ html, body {
     min-height: 0;
   }
   .timer-info {
-    padding: 0 1.2rem 1rem;
+    padding: 0 1.2rem 0.5rem;
   }
 }
 
 /* Landscape layout */
 @media (orientation: landscape) {
   #timer-screen {
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .timer-body {
+    flex: 1;
+    display: flex;
     flex-direction: row;
+    min-height: 0;
   }
   .timer-main {
     flex: 1;
@@ -183,7 +197,7 @@ html, body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 1rem 1.2rem 1rem 0;
+    padding: 1rem 1.2rem 0.5rem 0;
     overflow-y: auto;
   }
 }
@@ -209,10 +223,12 @@ body.phase-prep   .countdown { color: var(--yellow); }
 body.phase-work   .countdown { color: var(--green);  }
 body.phase-rest   .countdown { color: var(--blue);   }
 body.phase-done   .countdown { color: var(--muted);  }
+body.phase-entre  .countdown { color: var(--orange); }
 
 body.phase-prep   .phase-bar-fill { background: var(--yellow); }
 body.phase-work   .phase-bar-fill { background: var(--green);  }
 body.phase-rest   .phase-bar-fill { background: var(--blue);   }
+body.phase-entre  .phase-bar-fill { background: var(--orange); }
 
 /* Phase label */
 .phase-label {
@@ -307,6 +323,25 @@ body.phase-rest   .phase-bar-fill { background: var(--blue);   }
   font-size: 0.85rem;
   color: var(--muted);
   font-weight: 600;
+}
+
+/* Total time bar */
+.time-totals {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 1.2rem;
+  background: rgba(12,12,12,0.9);
+  border-top: 1px solid #1a1a1a;
+  font-size: 0.72rem;
+  color: var(--muted);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.time-value {
+  color: #999;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Done overlay */
